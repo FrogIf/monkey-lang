@@ -1,0 +1,62 @@
+package sch.frog.monkey.lang.util;
+
+import sch.frog.monkey.lang.ast.ITreeNode;
+
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
+public class AstTreeUtil {
+
+    /**
+     * 将树转为可视化字符串形式输出
+     * @param node 树根
+     * @return 字符串
+     */
+    public static String generateTree(ITreeNode node){
+        StringBuilder sb = new StringBuilder();
+        sb.append(node.toString()).append('\n');
+        buildTree(node, sb, 0, new int[0]);
+        return sb.toString();
+    }
+
+    /**
+     * @param parent 父节点
+     * @param sb stringBuilder
+     * @param level 树层级
+     * @param markArr 每一个int标记该层级是否有后继兄弟节点: 0 - 没有; 1 - 有
+     */
+    private static void buildTree(ITreeNode parent, StringBuilder sb, int level, int[] markArr){
+        List<ITreeNode> children = parent.getChildren();
+        if(children == null || children.isEmpty()){ return; }
+        Iterator<ITreeNode> itr = children.iterator();
+        int[] arr = Arrays.copyOf(markArr, level + 1);
+        while(itr.hasNext()){
+            ITreeNode child = itr.next();
+            boolean hn = itr.hasNext(); // 是否有后继兄弟节点
+            for(int i = 0; i <= level; i++){
+                if(i == level){
+                    if(hn){
+                        sb.append("+- ");
+                    }else{
+                        sb.append("\\- ");
+                    }
+                }else{
+                    if(arr[i] == 0){
+                        sb.append("   ");
+                    }else{
+                        sb.append("|  ");
+                    }
+                }
+            }
+            if(child == null){
+                sb.append("??null").append('\n');
+            }else{
+                sb.append(child).append('\n');
+                arr[level] = hn ? 1 : 0;
+                buildTree(child, sb, level + 1, arr);
+            }
+        }
+    }
+
+}

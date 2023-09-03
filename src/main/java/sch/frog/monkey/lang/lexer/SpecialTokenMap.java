@@ -67,6 +67,7 @@ public class SpecialTokenMap {
             if(cursor == null){
                 return result;
             }
+            scriptStream.next();
             cursor.match(scriptStream, result);
             if(result.tokenType == null){
                 result.tokenType = cursor.tokenType;
@@ -75,7 +76,7 @@ public class SpecialTokenMap {
         }
 
         private void match(IScriptStream scriptStream, MatchResult result){
-            char c = scriptStream.peek();
+            char c = scriptStream.current();
             if(c == IScriptStream.EOF){ return; }
             Node cursor = null;
             for (Node n : children) {

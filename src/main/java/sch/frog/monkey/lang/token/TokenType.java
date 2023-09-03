@@ -16,6 +16,7 @@ public enum TokenType {
     NUMBER, // 数字
     STRING, // 字符串
     LET, // 关键字let
+    RETURN, // 关键字return
     FUNCTION, // 关键字fun
     MINUS, // -
     BANG, // !
@@ -27,6 +28,8 @@ public enum TokenType {
     NOT_EQ, // !=
     LTE, // <=
     GTE, // >=
-
+    BOOL, // true/false
+    IF, // if
+    ELSE, // else
 
 }

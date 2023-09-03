@@ -18,6 +18,11 @@ public class Lexer {
     static {
         SPECIAL_IDENTIFIER_MAP.put("let", TokenType.LET);
         SPECIAL_IDENTIFIER_MAP.put("fun", TokenType.FUNCTION);
+        SPECIAL_IDENTIFIER_MAP.put("return", TokenType.RETURN);
+        SPECIAL_IDENTIFIER_MAP.put("true", TokenType.BOOL);
+        SPECIAL_IDENTIFIER_MAP.put("false", TokenType.BOOL);
+        SPECIAL_IDENTIFIER_MAP.put("if", TokenType.IF);
+        SPECIAL_IDENTIFIER_MAP.put("else", TokenType.ELSE);
 
         SPECIAL_TOKEN_MAP.put("==", TokenType.EQ);
         SPECIAL_TOKEN_MAP.put("=", TokenType.ASSIGN);
@@ -66,7 +71,6 @@ public class Lexer {
             SpecialTokenMap.MatchResult result = SPECIAL_TOKEN_MAP.match(scriptStream);
             token = new Token(scriptStream.scriptId(), start, result.getLiteral(), result.getTokenType());
         }
-        scriptStream.next();
         return token;
     }
 
@@ -80,6 +84,7 @@ public class Lexer {
             ch = scriptStream.current();
             if (ch == '"' && (escape & 1) == 0) {
                 result.append('"');
+                scriptStream.next();
                 break;
             }else if(ch == IScriptStream.EOF){
                 break;
@@ -100,9 +105,10 @@ public class Lexer {
         StringBuilder sb = new StringBuilder();
         char ch = scriptStream.current();
         sb.append(ch);
-        while(isLetter(ch = scriptStream.peek()) || isDigit(ch)){
-            scriptStream.next();
+        scriptStream.next();
+        while(isLetter(ch = scriptStream.current()) || isDigit(ch)){
             sb.append(ch);
+            scriptStream.next();
         }
         return sb.toString();
     }
@@ -113,13 +119,14 @@ public class Lexer {
         sb.append(ch);
         scriptStream.next();
         boolean dot = false;
-        boolean loop = false;
         boolean digit;
         while(true){
-            ch = scriptStream.peek();
+            ch = scriptStream.current();
             digit = isDigit(ch)
-                    || (!dot && (dot = ch == '.'))  // 小数点
-                    || (dot && !loop && (loop = ch == '_')); // 循环节
+                    || (!dot && (dot = ch == '.'));  // 小数点
+//            digit = isDigit(ch)
+//                    || (!dot && (dot = ch == '.'))  // 小数点
+//                    || (dot && !loop && (loop = ch == '_')); // 循环节
             if(!digit){ break; }
             scriptStream.next();
             sb.append(ch);
