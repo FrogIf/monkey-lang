@@ -31,5 +31,6 @@ public enum TokenType {
     BOOL, // true/false
     IF, // if
     ELSE, // else
+    WHILE, // while
 
 }

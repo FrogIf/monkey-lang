@@ -23,6 +23,7 @@ public class Lexer {
         SPECIAL_IDENTIFIER_MAP.put("false", TokenType.BOOL);
         SPECIAL_IDENTIFIER_MAP.put("if", TokenType.IF);
         SPECIAL_IDENTIFIER_MAP.put("else", TokenType.ELSE);
+        SPECIAL_IDENTIFIER_MAP.put("while", TokenType.WHILE);
 
         SPECIAL_TOKEN_MAP.put("==", TokenType.EQ);
         SPECIAL_TOKEN_MAP.put("=", TokenType.ASSIGN);

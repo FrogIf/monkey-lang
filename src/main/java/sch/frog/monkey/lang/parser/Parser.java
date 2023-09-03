@@ -8,7 +8,7 @@ import sch.frog.monkey.lang.ast.GroupExpression;
 import sch.frog.monkey.lang.ast.IExpressionStatement;
 import sch.frog.monkey.lang.ast.IStatement;
 import sch.frog.monkey.lang.ast.Identifier;
-import sch.frog.monkey.lang.ast.IfExpression;
+import sch.frog.monkey.lang.ast.IfElseStatement;
 import sch.frog.monkey.lang.ast.InfixExpression;
 import sch.frog.monkey.lang.ast.LetStatement;
 import sch.frog.monkey.lang.ast.Number;
@@ -16,6 +16,7 @@ import sch.frog.monkey.lang.ast.PrefixExpression;
 import sch.frog.monkey.lang.ast.Program;
 import sch.frog.monkey.lang.ast.ReturnStatement;
 import sch.frog.monkey.lang.ast.StringExp;
+import sch.frog.monkey.lang.ast.WhileStatement;
 import sch.frog.monkey.lang.exception.ExpressionException;
 import sch.frog.monkey.lang.lexer.Lexer;
 import sch.frog.monkey.lang.token.Token;
@@ -30,6 +31,7 @@ public class Parser {
     public static final HashMap<TokenType, Integer> precedenceMap = new HashMap<>();
 
     static{
+        precedenceMap.put(TokenType.ASSIGN, -1);
         precedenceMap.put(TokenType.EQ, 0);
         precedenceMap.put(TokenType.NOT_EQ, 0);
         precedenceMap.put(TokenType.GT, 1);
@@ -57,26 +59,34 @@ public class Parser {
 
     public Program parse() throws ExpressionException {
         Program program = new Program();
-        TokenType tt;
-        while((tt = this.currentToken.getType()) != TokenType.EOF){
-            IStatement statement;
-            if(tt == TokenType.LET){
-                statement = parseLetStatement(this);
-            }else if(tt == TokenType.RETURN){
-                statement = parseReturnStatement(this);
-            }else if(tt == TokenType.SEMICOLON){
+        while(this.currentToken.getType() != TokenType.EOF){
+            if(this.currentToken.getType() == TokenType.SEMICOLON){
                 this.next();
                 continue;
-            }else{
-                statement = parseExpressionStatement(this);
             }
-            program.addStatement(statement);
+            program.addStatement(parseStatement(this));
         }
         return program;
     }
 
+    private static IStatement parseStatement(Parser parser) throws ExpressionException{
+        TokenType tt = parser.current().getType();
+        switch (tt){
+            case IF:
+                return parseIfElseStatement(parser);
+            case WHILE:
+                return parseWhileStatement(parser);
+            case LET:
+                return parseLetStatement(parser);
+            case RETURN:
+                return parseReturnStatement(parser);
+            default:
+                return parseExpressionStatement(parser);
+        }
+    }
+
     public static IExpressionStatement parseExpressionStatement(Parser parser) throws ExpressionException {
-        return parseExpressionStatement(parser, -1);
+        return parseExpressionStatement(parser, Integer.MIN_VALUE);
     }
 
     public static IExpressionStatement parseExpressionStatement(Parser parser, int precedence) throws ExpressionException {
@@ -99,6 +109,7 @@ public class Parser {
         Token current = parser.current();
         TokenType type = current.getType();
         switch (type){
+            case ASSIGN:
             case EQ:
             case NOT_EQ:
             case LT:
@@ -135,8 +146,6 @@ public class Parser {
             case BANG:
                 parser.next();
                 return new PrefixExpression(current, parseExpressionStatement(parser));
-            case IF:
-                return parseIfElse(parser);
             case FUNCTION:
                 return parseFunDefine(parser);
             default:
@@ -208,16 +217,35 @@ public class Parser {
         return arguments;
     }
 
-    public static IExpressionStatement parseIfElse(Parser parser) throws ExpressionException{
+    private static IStatement parseWhileStatement(Parser parser) throws ExpressionException {
+        Token whileToken = parser.current();
+        if(whileToken.getType() != TokenType.WHILE){
+            throw new ExpressionException("while statement incorrect", whileToken.getPos());
+        }
+        parser.next();
+        if(parser.current().getType() != TokenType.LPAREN){
+            throw new ExpressionException("while statement incorrect", parser.current().getPos());
+        }
+        parser.next();
+        IExpressionStatement condition = parseExpressionStatement(parser);
+        if(parser.current().getType() != TokenType.RPAREN){
+            throw new ExpressionException("while statement incorrect", parser.current().getPos());
+        }
+        parser.next();
+        IExpressionStatement body = parseBlockExpression(parser);
+        return new WhileStatement(whileToken, condition, body);
+    }
+
+    public static IStatement parseIfElseStatement(Parser parser) throws ExpressionException{
         Token ifToken = parser.current();
-        IfExpression.ConditionExpPair ifPair = parseIfConditionExpPair(parser);
+        IfElseStatement.ConditionExpPair ifPair = parseIfConditionExpPair(parser);
 
         IExpressionStatement elseExp = null;
-        LinkedList<IfExpression.ConditionExpPair> elifList = new LinkedList<>();
+        LinkedList<IfElseStatement.ConditionExpPair> elifList = new LinkedList<>();
         while(parser.current().getType() == TokenType.ELSE){
             if(parser.peek().getType() == TokenType.IF){    // else if
                 parser.next();
-                IfExpression.ConditionExpPair elif = parseIfConditionExpPair(parser);
+                IfElseStatement.ConditionExpPair elif = parseIfConditionExpPair(parser);
                 elifList.add(elif);
             }else{  // else
                 parser.next();
@@ -226,10 +254,10 @@ public class Parser {
             }
         }
 
-        return new IfExpression(ifToken, ifPair, elifList, elseExp);
+        return new IfElseStatement(ifToken, ifPair, elifList, elseExp);
     }
 
-    private static IfExpression.ConditionExpPair parseIfConditionExpPair(Parser parser) throws ExpressionException{
+    private static IfElseStatement.ConditionExpPair parseIfConditionExpPair(Parser parser) throws ExpressionException{
         Token ifToken = parser.current();
         if(ifToken.getType() != TokenType.IF){
             throw new ExpressionException("if expression incorrect", ifToken.getPos());
@@ -247,7 +275,7 @@ public class Parser {
             parser.next();
         }
         IExpressionStatement ifExp = parseBlockExpression(parser);
-        return new IfExpression.ConditionExpPair(condition, ifExp);
+        return new IfElseStatement.ConditionExpPair(condition, ifExp);
     }
 
     public static IExpressionStatement parseBlockExpression(Parser parser) throws ExpressionException {
@@ -259,18 +287,11 @@ public class Parser {
         TokenType tt;
         LinkedList<IStatement> statements = new LinkedList<>();
         while((tt = parser.current().getType()) != TokenType.RBRACE && tt != TokenType.EOF){
-            IStatement statement;
-            if(tt == TokenType.LET){
-                statement = parseLetStatement(parser);
-            }else if(tt == TokenType.RETURN){
-                statement = parseReturnStatement(parser);
-            }else if(tt == TokenType.SEMICOLON){
+            if(parser.currentToken.getType() == TokenType.SEMICOLON){
                 parser.next();
                 continue;
-            }else{
-                statement = parseExpressionStatement(parser);
             }
-            statements.add(statement);
+            statements.add(parseStatement(parser));
         }
         Token end = parser.current();
         if(end.getType() != TokenType.RBRACE){

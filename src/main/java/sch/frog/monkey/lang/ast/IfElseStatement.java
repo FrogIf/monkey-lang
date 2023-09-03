@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class IfExpression implements IExpressionStatement {
+public class IfElseStatement implements IStatement {
 
     private final Token ifToken;
 
@@ -17,7 +17,7 @@ public class IfExpression implements IExpressionStatement {
 
     private final IExpressionStatement elseExp;
 
-    public IfExpression(Token ifToken, ConditionExpPair ifPair, List<ConditionExpPair> elifList, IExpressionStatement elseExp) {
+    public IfElseStatement(Token ifToken, ConditionExpPair ifPair, List<ConditionExpPair> elifList, IExpressionStatement elseExp) {
         this.ifToken = ifToken;
         this.ifPair = ifPair;
         this.elseExp = elseExp;
