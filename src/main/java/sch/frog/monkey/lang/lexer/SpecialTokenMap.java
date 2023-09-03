@@ -14,7 +14,10 @@ public class SpecialTokenMap {
 
     public MatchResult match(IScriptStream scriptStream){
         MatchResult result = root.startMatch(scriptStream);
-        if(result.tokenType == null){ result.tokenType = TokenType.ILLEGAL; }
+        if(result.tokenType == null){
+            result.tokenType = TokenType.ILLEGAL;
+            scriptStream.next();
+        }
         return result;
     }
 
