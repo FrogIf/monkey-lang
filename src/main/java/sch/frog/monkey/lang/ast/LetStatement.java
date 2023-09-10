@@ -21,12 +21,20 @@ public class LetStatement implements IStatement {
     }
 
     @Override
-    public List<ITreeNode> getChildren() {
+    public List<IAstNode> getChildren() {
         if(value == null){
             return Collections.singletonList(name);
         }else{
             return Arrays.asList(name, value);
         }
+    }
+
+    public String getVarName(){
+        return name.literal();
+    }
+
+    public IExpressionStatement getValueExp(){
+        return value;
     }
 
     @Override

@@ -5,12 +5,12 @@ import sch.frog.monkey.lang.val.Value;
 
 import java.util.List;
 
-public final class StringExp implements IExpressionStatement{
+public class Null implements IExpressionStatement{
 
-    private final Token strToken;
+    private Token nullToken;
 
-    public StringExp(Token strToken){
-        this.strToken = strToken;
+    public Null(Token nullToken) {
+        this.nullToken = nullToken;
     }
 
     @Override
@@ -20,10 +20,10 @@ public final class StringExp implements IExpressionStatement{
 
     @Override
     public String toString(){
-        return strToken.getLiteral();
+        return nullToken.getLiteral();
     }
 
     public Value evaluate(){
-        return new Value(strToken.getLiteral());
+        return Value.NULL;
     }
 }

@@ -22,7 +22,7 @@ public class Identifier implements IExpressionStatement {
     }
 
     @Override
-    public List<ITreeNode> getChildren() {
+    public List<IAstNode> getChildren() {
         return null;
     }
 }

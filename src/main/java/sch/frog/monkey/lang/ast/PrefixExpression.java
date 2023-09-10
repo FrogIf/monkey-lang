@@ -17,12 +17,20 @@ public class PrefixExpression implements IExpressionStatement {
     }
 
     @Override
-    public List<ITreeNode> getChildren() {
+    public List<IAstNode> getChildren() {
         return Collections.singletonList(right);
     }
 
     @Override
     public String toString(){
         return prefix.getLiteral();
+    }
+
+    public String operator(){
+        return prefix.getLiteral();
+    }
+
+    public IAstNode getRight(){
+        return right;
     }
 }

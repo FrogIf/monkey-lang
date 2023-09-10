@@ -4,6 +4,7 @@ import sch.frog.monkey.lang.token.Token;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class CallExpression extends InfixExpression{
@@ -12,14 +13,14 @@ public class CallExpression extends InfixExpression{
 
     public CallExpression(IExpressionStatement left, Token infix, List<IExpressionStatement> arguments) {
         super(left, infix, null);
-        this.arguments = arguments;
+        this.arguments = arguments == null ? Collections.emptyList() : arguments;
     }
 
     @Override
-    public List<ITreeNode> getChildren() {
-        return Arrays.asList(left, new ITreeNode() {
+    public List<IAstNode> getChildren() {
+        return Arrays.asList(left, new IAstNode() {
             @Override
-            public List<ITreeNode> getChildren() {
+            public List<IAstNode> getChildren() {
                 return new ArrayList<>(arguments);
             }
 
@@ -28,6 +29,10 @@ public class CallExpression extends InfixExpression{
                 return "args";
             }
         });
+    }
+
+    public List<IExpressionStatement> getRealArgExps(){
+        return arguments;
     }
 
     @Override

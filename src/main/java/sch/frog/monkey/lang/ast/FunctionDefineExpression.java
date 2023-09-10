@@ -4,6 +4,7 @@ import sch.frog.monkey.lang.token.Token;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class FunctionDefineExpression implements IExpressionStatement{
@@ -16,15 +17,15 @@ public class FunctionDefineExpression implements IExpressionStatement{
 
     public FunctionDefineExpression(Token funToken, List<Identifier> arguments, IExpressionStatement body) {
         this.funToken = funToken;
-        this.arguments = arguments;
+        this.arguments = arguments == null ? Collections.emptyList() : arguments;
         this.body = body;
     }
 
     @Override
-    public List<ITreeNode> getChildren() {
-        return Arrays.asList(new ITreeNode() {
+    public List<IAstNode> getChildren() {
+        return Arrays.asList(new IAstNode() {
             @Override
-            public List<ITreeNode> getChildren() {
+            public List<IAstNode> getChildren() {
                 return new ArrayList<>(arguments);
             }
 
@@ -38,5 +39,13 @@ public class FunctionDefineExpression implements IExpressionStatement{
     @Override
     public String toString(){
         return funToken.getLiteral();
+    }
+
+    public List<Identifier> getArguments(){
+        return arguments;
+    }
+
+    public IExpressionStatement getBody(){
+        return body;
     }
 }

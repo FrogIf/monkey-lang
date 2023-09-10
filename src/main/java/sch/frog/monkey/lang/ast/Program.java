@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Program implements ITreeNode{
+public class Program implements IAstNode {
 
     private final LinkedList<IStatement> statements = new LinkedList<>();
 
@@ -13,7 +13,7 @@ public class Program implements ITreeNode{
     }
 
     @Override
-    public List<ITreeNode> getChildren() {
+    public List<IAstNode> getChildren() {
         return new ArrayList<>(statements);
     }
 

@@ -24,6 +24,9 @@ public class Lexer {
         SPECIAL_IDENTIFIER_MAP.put("if", TokenType.IF);
         SPECIAL_IDENTIFIER_MAP.put("else", TokenType.ELSE);
         SPECIAL_IDENTIFIER_MAP.put("while", TokenType.WHILE);
+        SPECIAL_IDENTIFIER_MAP.put("null", TokenType.NULL);
+        SPECIAL_IDENTIFIER_MAP.put("break", TokenType.BREAK);
+        SPECIAL_IDENTIFIER_MAP.put("continue", TokenType.CONTINUE);
 
         SPECIAL_TOKEN_MAP.put("==", TokenType.EQ);
         SPECIAL_TOKEN_MAP.put("=", TokenType.ASSIGN);
@@ -68,11 +71,50 @@ public class Lexer {
         }else if(ch == '"'){
             String str = readString();
             token = new Token(scriptStream.scriptId(), start, str, TokenType.STRING);
+        }else if(ch == '/'){
+            String str = readComment();
+            if(str == null){
+                token = new Token(scriptStream.scriptId(), start, null, TokenType.ILLEGAL);
+            }else{
+                token = new Token(scriptStream.scriptId(), start, str, TokenType.COMMENT);
+            }
         }else{
             SpecialTokenMap.MatchResult result = SPECIAL_TOKEN_MAP.match(scriptStream);
             token = new Token(scriptStream.scriptId(), start, result.getLiteral(), result.getTokenType());
         }
         return token;
+    }
+
+    private String readComment(){
+        StringBuilder comment = new StringBuilder();
+        char ch = scriptStream.current();
+        comment.append(ch);
+        scriptStream.next();
+        ch = scriptStream.current();
+        if(ch == '/'){
+            comment.append(ch);
+            scriptStream.next();
+            while((ch = scriptStream.current()) != '\n' && ch != IScriptStream.EOF){
+                comment.append(ch);
+                scriptStream.next();
+            }
+        }else if(ch == '*'){
+            comment.append(ch);
+            scriptStream.next();
+            while((ch = scriptStream.current()) != IScriptStream.EOF){
+                if(ch == '*' && scriptStream.peek() == '/'){
+                    scriptStream.next();
+                    scriptStream.next();
+                    comment.append("*/");
+                    break;
+                }
+                comment.append(ch);
+                scriptStream.next();
+            }
+        }else{
+            return null;
+        }
+        return comment.toString();
     }
 
     private String readString(){

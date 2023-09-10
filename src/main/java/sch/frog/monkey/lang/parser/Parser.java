@@ -11,10 +11,13 @@ import sch.frog.monkey.lang.ast.Identifier;
 import sch.frog.monkey.lang.ast.IfElseStatement;
 import sch.frog.monkey.lang.ast.InfixExpression;
 import sch.frog.monkey.lang.ast.LetStatement;
+import sch.frog.monkey.lang.ast.NothingStatement;
+import sch.frog.monkey.lang.ast.Null;
 import sch.frog.monkey.lang.ast.Number;
 import sch.frog.monkey.lang.ast.PrefixExpression;
 import sch.frog.monkey.lang.ast.Program;
 import sch.frog.monkey.lang.ast.ReturnStatement;
+import sch.frog.monkey.lang.ast.SignalStatement;
 import sch.frog.monkey.lang.ast.StringExp;
 import sch.frog.monkey.lang.ast.WhileStatement;
 import sch.frog.monkey.lang.exception.ExpressionException;
@@ -80,9 +83,22 @@ public class Parser {
                 return parseLetStatement(parser);
             case RETURN:
                 return parseReturnStatement(parser);
+            case BREAK:
+            case CONTINUE:
+                return parseSignalStatement(parser);
+            case COMMENT:
+                Token tk = parser.current();
+                parser.next();
+                return new NothingStatement(tk);
             default:
                 return parseExpressionStatement(parser);
         }
+    }
+
+    public static SignalStatement parseSignalStatement(Parser parser) throws ExpressionException {
+        Token current = parser.current();
+        parser.next();
+        return new SignalStatement(current);
     }
 
     public static IExpressionStatement parseExpressionStatement(Parser parser) throws ExpressionException {
@@ -142,6 +158,8 @@ public class Parser {
                 return parseString(parser);
             case LPAREN:
                 return parseGroup(parser);
+            case NULL:
+                return parseNull(parser);
             case MINUS:
             case BANG:
                 parser.next();
@@ -341,6 +359,15 @@ public class Parser {
         }
         parser.next();
         return new Number(current);
+    }
+
+    public static Null parseNull(Parser parser) throws ExpressionException {
+        Token current = parser.current();
+        if(current.getType() != TokenType.NULL){
+            throw new ExpressionException("null incorrect", current.getPos());
+        }
+        parser.next();
+        return new Null(current);
     }
 
     public static Identifier parseIdentifier(Parser parser) throws ExpressionException {

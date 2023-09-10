@@ -20,12 +20,24 @@ public class InfixExpression implements IExpressionStatement{
     }
 
     @Override
-    public List<ITreeNode> getChildren() {
+    public List<IAstNode> getChildren() {
         return Arrays.asList(left, right);
     }
 
     @Override
     public String toString(){
         return infix.getLiteral();
+    }
+
+    public String operator(){
+        return infix.getLiteral();
+    }
+
+    public IAstNode getLeft(){
+        return left;
+    }
+
+    public IAstNode getRight(){
+        return right;
     }
 }

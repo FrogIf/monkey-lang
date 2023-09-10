@@ -20,7 +20,7 @@ public class BlockExpression implements IExpressionStatement {
     }
 
     @Override
-    public List<ITreeNode> getChildren() {
+    public List<IAstNode> getChildren() {
         return new ArrayList<>(statements);
     }
 

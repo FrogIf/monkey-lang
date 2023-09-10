@@ -1,0 +1,15 @@
+let t = 1; // 常数
+/*
+ * 阶乘计算
+ */
+let factorial = fun(num){
+    let sum = 1;
+    while(true){
+       sum = sum * num;
+       num = num - 1;
+       if(num <= t){ break; }
+    }
+    return sum;
+}
+
+factorial(100);

@@ -16,11 +16,15 @@ public class GroupExpression implements IExpressionStatement {
     }
 
     @Override
-    public List<ITreeNode> getChildren() {
+    public List<IAstNode> getChildren() {
         return Collections.singletonList(child);
     }
 
     public String toString(){
         return "group";
+    }
+
+    public IAstNode getSubExp(){
+        return child;
     }
 }

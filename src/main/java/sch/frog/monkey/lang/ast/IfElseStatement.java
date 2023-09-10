@@ -25,8 +25,8 @@ public class IfElseStatement implements IStatement {
     }
 
     @Override
-    public List<ITreeNode> getChildren() {
-        List<ITreeNode> nodes = new ArrayList<>();
+    public List<IAstNode> getChildren() {
+        List<IAstNode> nodes = new ArrayList<>();
         nodes.add(ifPair);
         if(elifList != null && !elifList.isEmpty()){
             nodes.addAll(elifList);
@@ -42,6 +42,19 @@ public class IfElseStatement implements IStatement {
         return ifToken.getLiteral();
     }
 
+    public List<ConditionExpPair> getConditionExpPair(){
+        List<ConditionExpPair> nodes = new ArrayList<>();
+        nodes.add(ifPair);
+        if(elifList != null && !elifList.isEmpty()){
+            nodes.addAll(elifList);
+        }
+        return nodes;
+    }
+
+    public IExpressionStatement getElseExp(){
+        return this.elseExp;
+    }
+
     public static class ConditionExpPair implements IExpressionStatement {
         private IExpressionStatement condition;
         private IExpressionStatement expression;
@@ -52,8 +65,16 @@ public class IfElseStatement implements IStatement {
         }
 
         @Override
-        public List<ITreeNode> getChildren() {
+        public List<IAstNode> getChildren() {
             return Arrays.asList(condition, expression);
+        }
+
+        public IExpressionStatement getCondition(){
+            return condition;
+        }
+
+        public IExpressionStatement getExpression(){
+            return expression;
         }
 
         @Override

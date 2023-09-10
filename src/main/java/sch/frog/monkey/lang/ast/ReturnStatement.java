@@ -23,8 +23,12 @@ public class ReturnStatement implements IStatement {
     }
 
     @Override
-    public List<ITreeNode> getChildren() {
+    public List<IAstNode> getChildren() {
         return Arrays.asList(returnValue);
+    }
+
+    public IExpressionStatement returnExp(){
+        return returnValue;
     }
 
     public String toString(){

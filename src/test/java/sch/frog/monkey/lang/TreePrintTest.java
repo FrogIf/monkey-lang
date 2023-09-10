@@ -1,6 +1,6 @@
 package sch.frog.monkey.lang;
 
-import sch.frog.monkey.lang.ast.ITreeNode;
+import sch.frog.monkey.lang.ast.IAstNode;
 import sch.frog.monkey.lang.util.AstTreeUtil;
 
 import java.util.ArrayList;
@@ -32,39 +32,39 @@ public class TreePrintTest {
         \- org.yaml:snakeyaml:jar:2.0:compile
     */
     public static void main(String[] args){
-        GeneralTree root = new GeneralTree("sch.frog:FrogJson:jar:1.4", new ITreeNode[]{
-                new GeneralTree("org.openjfx:javafx-controls:jar:11.0.2:compile", new ITreeNode[]{
+        GeneralTree root = new GeneralTree("sch.frog:FrogJson:jar:1.4", new IAstNode[]{
+                new GeneralTree("org.openjfx:javafx-controls:jar:11.0.2:compile", new IAstNode[]{
                         new GeneralTree("org.openjfx:javafx-controls:jar:win:11.0.2:compile"),
-                        new GeneralTree("org.openjfx:javafx-graphics:jar:11.0.2:compile", new ITreeNode[]{
-                                new GeneralTree("org.openjfx:javafx-graphics:jar:win:11.0.2:compile", new ITreeNode[]{
+                        new GeneralTree("org.openjfx:javafx-graphics:jar:11.0.2:compile", new IAstNode[]{
+                                new GeneralTree("org.openjfx:javafx-graphics:jar:win:11.0.2:compile", new IAstNode[]{
                                         new GeneralTree("aaa"),
                                         new GeneralTree("bbb")
                                 }),
-                                new GeneralTree("org.openjfx:javafx-base:jar:11.0.2:compile", new ITreeNode[]{
+                                new GeneralTree("org.openjfx:javafx-base:jar:11.0.2:compile", new IAstNode[]{
                                         new GeneralTree("org.openjfx:javafx-base:jar:win:11.0.2:compile")
                                 }),
                         }),
                 }),
-                new GeneralTree("org.openjfx:javafx-fxml:jar:11.0.2:compile", new ITreeNode[]{
-                        new GeneralTree("org.openjfx:javafx-fxml:jar:win:11.0.2:compile", new ITreeNode[]{
+                new GeneralTree("org.openjfx:javafx-fxml:jar:11.0.2:compile", new IAstNode[]{
+                        new GeneralTree("org.openjfx:javafx-fxml:jar:win:11.0.2:compile", new IAstNode[]{
                                 new GeneralTree("ccc"),
                                 new GeneralTree("ddd")
                         }),
-                        new GeneralTree("eeeeeeeee", new ITreeNode[]{
+                        new GeneralTree("eeeeeeeee", new IAstNode[]{
                                 new GeneralTree("ffffff"),
-                                new GeneralTree("ggggggg", new ITreeNode[]{
-                                        new GeneralTree("kkkkkkkkkk", new ITreeNode[]{
-                                                new GeneralTree("vvvvvvvvvvv", new ITreeNode[]{
+                                new GeneralTree("ggggggg", new IAstNode[]{
+                                        new GeneralTree("kkkkkkkkkk", new IAstNode[]{
+                                                new GeneralTree("vvvvvvvvvvv", new IAstNode[]{
                                                         new GeneralTree("qwqwqwqwqwqwqwqw")
                                                 })
                                         }),
-                                        new GeneralTree("jdjdjdjdjd", new ITreeNode[]{
+                                        new GeneralTree("jdjdjdjdjd", new IAstNode[]{
                                                 new GeneralTree("vlvlvlvlvlvlv")
                                         })
                                 })
                         })
                 }),
-                new GeneralTree("org.fxmisc.richtext:richtextfx:jar:0.11.0:compile", new ITreeNode[]{
+                new GeneralTree("org.fxmisc.richtext:richtextfx:jar:0.11.0:compile", new IAstNode[]{
                         new GeneralTree("org.fxmisc.undo:undofx:jar:2.1.1:compile"),
                         new GeneralTree("org.fxmisc.wellbehaved:wellbehavedfx:jar:0.3.3:compile")
                 }),
@@ -77,9 +77,9 @@ public class TreePrintTest {
         System.out.println(content);
     }
 
-    public static class GeneralTree implements ITreeNode{
+    public static class GeneralTree implements IAstNode {
 
-        private final ArrayList<ITreeNode> children = new ArrayList<>();
+        private final ArrayList<IAstNode> children = new ArrayList<>();
 
         private final String literal;
 
@@ -87,13 +87,13 @@ public class TreePrintTest {
             this.literal = literal;
         }
 
-        public GeneralTree(String literal, ITreeNode[] nodes){
+        public GeneralTree(String literal, IAstNode[] nodes){
             this.literal = literal;
             children.addAll(Arrays.asList(nodes));
         }
 
         @Override
-        public List<ITreeNode> getChildren() {
+        public List<IAstNode> getChildren() {
             return children;
         }
 

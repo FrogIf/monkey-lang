@@ -32,5 +32,10 @@ public enum TokenType {
     IF, // if
     ELSE, // else
     WHILE, // while
+    NULL, // null
+    BREAK,
+    CONTINUE,
+    COMMENT, // 注释
+
 
 }
