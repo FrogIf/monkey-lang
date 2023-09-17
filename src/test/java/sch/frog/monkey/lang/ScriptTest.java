@@ -1,5 +1,6 @@
 package sch.frog.monkey.lang;
 
+import sch.frog.monkey.lang.app.MonkeyLangApp;
 import sch.frog.monkey.lang.ast.Program;
 import sch.frog.monkey.lang.evaluator.Evaluator;
 import sch.frog.monkey.lang.exception.EvalException;
@@ -31,6 +32,7 @@ public class ScriptTest {
                 sb.append(line).append('\n');
             }
             line = sb.toString();
+            MonkeyLangApp.init();
             Lexer lexer = new Lexer(new StringScriptStream(line));
             Parser parser = new Parser(lexer);
             Program program = null;
@@ -55,7 +57,7 @@ public class ScriptTest {
     private static void printTokens(String exp){
         Lexer lexer = new Lexer(new StringScriptStream(exp));
         Token t;
-        while((t = lexer.nextToken()).getType() != TokenType.EOF && t.getType() != TokenType.ILLEGAL){
+        while((t = lexer.nextToken()).getType() != TokenType.EOF){
             System.out.println(t);
         }
     }

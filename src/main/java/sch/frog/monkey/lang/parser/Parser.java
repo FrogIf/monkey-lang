@@ -1,5 +1,7 @@
 package sch.frog.monkey.lang.parser;
 
+import sch.frog.monkey.lang.ast.ArrayExpression;
+import sch.frog.monkey.lang.ast.ArrayIndexExpression;
 import sch.frog.monkey.lang.ast.BOOL;
 import sch.frog.monkey.lang.ast.BlockExpression;
 import sch.frog.monkey.lang.ast.CallExpression;
@@ -11,6 +13,8 @@ import sch.frog.monkey.lang.ast.Identifier;
 import sch.frog.monkey.lang.ast.IfElseStatement;
 import sch.frog.monkey.lang.ast.InfixExpression;
 import sch.frog.monkey.lang.ast.LetStatement;
+import sch.frog.monkey.lang.ast.MapExpression;
+import sch.frog.monkey.lang.ast.MapIndexExpression;
 import sch.frog.monkey.lang.ast.NothingStatement;
 import sch.frog.monkey.lang.ast.Null;
 import sch.frog.monkey.lang.ast.Number;
@@ -25,13 +29,17 @@ import sch.frog.monkey.lang.lexer.Lexer;
 import sch.frog.monkey.lang.token.Token;
 import sch.frog.monkey.lang.token.TokenType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class Parser {
 
     public static final HashMap<TokenType, Integer> precedenceMap = new HashMap<>();
+
+    private static final int PREFIX_PRECEDENCE = 4;
 
     static{
         precedenceMap.put(TokenType.ASSIGN, -1);
@@ -45,7 +53,9 @@ public class Parser {
         precedenceMap.put(TokenType.MINUS, 2);
         precedenceMap.put(TokenType.ASTERISK, 3);
         precedenceMap.put(TokenType.SLASH, 3);
-        precedenceMap.put(TokenType.LPAREN, 4);
+        precedenceMap.put(TokenType.LPAREN, 5);
+        precedenceMap.put(TokenType.LBRACKET, 6);
+        precedenceMap.put(TokenType.DOT, 7);
     }
 
     private Token currentToken;
@@ -140,8 +150,33 @@ public class Parser {
                 return new InfixExpression(left, current, parseExpressionStatement(parser, precedenceMap.get(type)));
             case LPAREN:
                 return new CallExpression(left, current, parseCallArguments(parser));
+            case LBRACKET:
+                return new ArrayIndexExpression(left, current, parseArrayIndex(parser));
+            case DOT:
+                parser.next();
+                return new MapIndexExpression(left, current, parseIdentifier(parser));
         }
         return null;
+    }
+
+    public static IExpressionStatement parseArrayIndex(Parser parser) throws ExpressionException{
+        Token begin = parser.current();
+        if(begin.getType() != TokenType.LBRACKET){
+            throw new ExpressionException("array index incorrect", begin.getPos());
+        }
+        parser.next();
+        if(parser.current().getType() == TokenType.RBRACKET){
+            parser.next();
+            throw new ExpressionException("array index no index", parser.current().getPos());
+        }
+
+        IExpressionStatement indexExpression = parseExpressionStatement(parser);
+
+        if(parser.current().getType() != TokenType.RBRACKET){
+            throw new ExpressionException("array index not close", parser.current().getPos());
+        }
+        parser.next();
+        return indexExpression;
     }
 
     public static IExpressionStatement parsePrefixExpression(Parser parser) throws ExpressionException {
@@ -163,12 +198,85 @@ public class Parser {
             case MINUS:
             case BANG:
                 parser.next();
-                return new PrefixExpression(current, parseExpressionStatement(parser));
+                return new PrefixExpression(current, parseExpressionStatement(parser, PREFIX_PRECEDENCE));
             case FUNCTION:
                 return parseFunDefine(parser);
+            case LBRACKET:
+                return parseArray(parser);
+            case LBRACE:
+                return parseMap(parser);
             default:
                 return null;
         }
+    }
+
+    private static MapExpression parseMap(Parser parser) throws ExpressionException{
+        Token begin = parser.current();
+        if(begin.getType() != TokenType.LBRACE){
+            throw new ExpressionException("map incorrect", begin.getPos());
+        }
+        parser.next();
+        Map<String, IExpressionStatement> map = new HashMap<>();
+        if(parser.current().getType() == TokenType.RBRACE){
+            parser.next();
+        }else{
+            while(true){
+                Token t = parser.current();
+                String key = null;
+                if(t.getType() == TokenType.STRING){
+                    key = t.getLiteral();
+                    key = key.substring(1, key.length() - 1);
+                }else if(t.getType() == TokenType.IDENT){
+                    key = t.getLiteral();
+                }else{
+                    throw new ExpressionException("map key must string or identifier", t.getPos());
+                }
+                parser.next();
+
+                if(parser.current().getType() != TokenType.COLON){
+                    throw new ExpressionException("map pair must have colon", parser.current().getPos());
+                }
+                parser.next();
+
+                IExpressionStatement expression = parseExpressionStatement(parser);
+                map.put(key, expression);
+
+                if(parser.current().getType() == TokenType.RBRACE){
+                    parser.next();
+                    break;
+                }else if(parser.current().getType() == TokenType.COMMA){
+                    parser.next();
+                }else{
+                    throw new ExpressionException("map pair split must comma", parser.current().getPos());
+                }
+            }
+        }
+        return new MapExpression(begin, map);
+    }
+
+    private static ArrayExpression parseArray(Parser parser) throws ExpressionException {
+        Token begin = parser.current();
+        if(begin.getType() != TokenType.LBRACKET){
+            throw new ExpressionException("array incorrect", begin.getPos());
+        }
+        parser.next();
+        ArrayList<IExpressionStatement> elements = new ArrayList<>();
+        if(parser.current().getType() == TokenType.RBRACKET){
+            parser.next();
+        }else{
+            elements.add(parseExpressionStatement(parser));
+
+            TokenType tt;
+            while((tt = parser.current().getType()) == TokenType.COMMA){
+                parser.next();
+                elements.add(parseExpressionStatement(parser));
+            }
+            if(tt != TokenType.RBRACKET){
+                throw new ExpressionException("array not close", parser.current().getPos());
+            }
+            parser.next();
+        }
+        return new ArrayExpression(begin, elements);
     }
 
     public static List<IExpressionStatement> parseCallArguments(Parser parser) throws ExpressionException{
@@ -191,7 +299,7 @@ public class Parser {
             arguments.add(parseExpressionStatement(parser));
         }
         if(tt != TokenType.RPAREN){
-            throw new ExpressionException("call not close", parser.current().getPos());
+            throw new ExpressionException("call not close, except ), but " + parser.current().getLiteral(), parser.current().getPos());
         }
         parser.next();
         return arguments;

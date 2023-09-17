@@ -1,6 +1,8 @@
 package sch.frog.monkey.lang.evaluator;
 
 import io.github.frogif.calculator.number.impl.RationalNumber;
+import sch.frog.monkey.lang.ast.ArrayExpression;
+import sch.frog.monkey.lang.ast.ArrayIndexExpression;
 import sch.frog.monkey.lang.ast.BOOL;
 import sch.frog.monkey.lang.ast.BlockExpression;
 import sch.frog.monkey.lang.ast.CallExpression;
@@ -12,6 +14,8 @@ import sch.frog.monkey.lang.ast.Identifier;
 import sch.frog.monkey.lang.ast.IfElseStatement;
 import sch.frog.monkey.lang.ast.InfixExpression;
 import sch.frog.monkey.lang.ast.LetStatement;
+import sch.frog.monkey.lang.ast.MapExpression;
+import sch.frog.monkey.lang.ast.MapIndexExpression;
 import sch.frog.monkey.lang.ast.NothingStatement;
 import sch.frog.monkey.lang.ast.Null;
 import sch.frog.monkey.lang.ast.Number;
@@ -22,19 +26,33 @@ import sch.frog.monkey.lang.ast.SignalStatement;
 import sch.frog.monkey.lang.ast.StringExp;
 import sch.frog.monkey.lang.ast.WhileStatement;
 import sch.frog.monkey.lang.exception.EvalException;
-import sch.frog.monkey.lang.val.FunctionValue;
+import sch.frog.monkey.lang.exception.FunctionExistException;
+import sch.frog.monkey.lang.val.FunctionDefine;
+import sch.frog.monkey.lang.val.FunctionObj;
+import sch.frog.monkey.lang.val.MapObject;
 import sch.frog.monkey.lang.val.SignalValue;
 import sch.frog.monkey.lang.val.Value;
 import sch.frog.monkey.lang.val.ValueType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Evaluator {
 
     private final IAstNode program;
 
     private final EvalContext globalContext = new EvalContext();
+
+    private static final HashMap<String, IBuiltinFunction> BuiltinFunctionMap = new HashMap<>();
+
+    public static synchronized void addBuiltinFunction(String name, IBuiltinFunction function) throws FunctionExistException {
+        if(BuiltinFunctionMap.containsKey(name)){
+            throw new FunctionExistException(name);
+        }
+        BuiltinFunctionMap.put(name, function);
+    }
 
     public Evaluator(IAstNode program) {
         this.program = program;
@@ -55,10 +73,18 @@ public class Evaluator {
             return ((Null) node).evaluate();
         }else if(node instanceof CallExpression){
             return evaluateFunCallExpression((CallExpression) node, context);
-        }else if(node instanceof Program){
+        }else if(node instanceof MapExpression){
+            return evaluateMapExpression((MapExpression)node, context);
+        } else if (node instanceof MapIndexExpression) {
+            return evaluateMapIndex((MapIndexExpression)node, context);
+        } else if(node instanceof Program){
             return evaluateProgram((Program)node, context);
         }else if(node instanceof BlockExpression){
             return evaluateBlockExpression((BlockExpression)node, context);
+        }else if(node instanceof ArrayExpression){
+            return evaluateArrayExpression((ArrayExpression) node, context);
+        }else if(node instanceof ArrayIndexExpression){
+            return evaluateArrayIndex((ArrayIndexExpression) node, context);
         }else if(node instanceof PrefixExpression){
             return evaluatePrefix((PrefixExpression)node, context);
         }else if(node instanceof InfixExpression){
@@ -86,39 +112,105 @@ public class Evaluator {
         }
     }
 
+    private Value evaluateMapIndex(MapIndexExpression node, EvalContext context) throws EvalException {
+        IAstNode left = node.getLeft();
+        Value mapVal = eval(left, context);
+        if(mapVal.getType() != ValueType.MAP){
+            return error("map index except callee map, but " + mapVal.getType().name());
+        }
+        IAstNode right = node.getRight();
+        if(right instanceof Identifier){
+            return mapVal.cast(MapObject.class).getOrDefault(((Identifier) right).literal(), Value.NULL);
+        }else{
+            return error("map index must identifier, but " + right.getClass());
+        }
+    }
+
+    private Value evaluateMapExpression(MapExpression node, EvalContext context) throws EvalException {
+        Map<String, IExpressionStatement> map = node.getMap();
+        MapObject mapVal = new MapObject();
+        for (Map.Entry<String, IExpressionStatement> entry : map.entrySet()) {
+            mapVal.put(entry.getKey(), eval(entry.getValue(), context));
+        }
+        return new Value(mapVal);
+    }
+
+    private Value evaluateArrayIndex(ArrayIndexExpression arrayIndexExpression, EvalContext context) throws EvalException {
+        IAstNode left = arrayIndexExpression.getLeft();
+        Value arr = eval(left, context);
+        if(arr.getType() != ValueType.ARRAY){
+            return error("array index left is not array");
+        }
+        IAstNode right = arrayIndexExpression.getRight();
+        Value index = eval(right, context);
+        if(index.getType() != ValueType.NUMBER){
+            return error("array index must number, but " + index.getType().name());
+        }
+        Integer i = index.cast(int.class);
+        return arr.cast(Value[].class)[i];
+    }
+
+    private Value evaluateArrayExpression(ArrayExpression arrayExpression, EvalContext context) throws EvalException {
+        List<IExpressionStatement> elements = arrayExpression.getElements();
+        Value[] eleArr = new Value[elements.size()];
+        int i = 0;
+        for (IExpressionStatement element : elements) {
+            Value val = eval(element, context);
+            if(val.getType() == ValueType.SIGNAL){
+                return val;
+            }else{
+                eleArr[i++] = val;
+            }
+        }
+        return new Value(eleArr);
+    }
+
     public Value evaluateFunCallExpression(CallExpression callExpression, EvalContext context) throws EvalException {
         IAstNode left = callExpression.getLeft();
         Value funVal;
         if(left instanceof Identifier){
-            funVal = context.getVariable(((Identifier) left).literal());
+            funVal = evaluateIdentifier((Identifier) left, context);
         }else{
             funVal = eval(left, context);
         }
         if(funVal == null || funVal.getType() != ValueType.FUNCTION){
             return error("callee is not function, but " + (funVal == null ? null : funVal.getType().name()));
         }
-        FunctionValue funBody = funVal.cast(FunctionValue.class);
-        List<IExpressionStatement> realArgExps = callExpression.getRealArgExps();
-        List<String> formatArgs = funBody.getFormatArgs();
-        if(formatArgs.size() != realArgExps.size()){
-            return error("function argument count not match");
-        }
-        ArrayList<Value> realArgs = new ArrayList<>(realArgExps.size());
-        for (IExpressionStatement realArgExp : realArgExps) {
-            realArgs.add(eval(realArgExp, context));
-        }
-        EvalContext localContext = new EvalContext(context);
-        for (int i = 0, len = formatArgs.size(); i < len; i++){
-            localContext.addVariable(formatArgs.get(i), realArgs.get(i));
-        }
-        Value val = eval(funBody.getBody(), localContext);
-        if(val.getType() == ValueType.SIGNAL){
-            SignalValue signal = val.cast(SignalValue.class);
-            if(signal.type() == SignalValue.Type.RETURN){
-                return signal.val();
+        FunctionObj funObj = funVal.cast(FunctionObj.class);
+        if(funObj.type() == FunctionObj.Type.BUILTIN){
+            IBuiltinFunction builtinFunction = funObj.getBuiltinFunction();
+            List<IExpressionStatement> realArgExps = callExpression.getRealArgExps();
+            Value[] realArgs = new Value[realArgExps.size()];
+            int i = 0;
+            for (IExpressionStatement realArgExp : realArgExps) {
+                realArgs[i++] = eval(realArgExp, context);
             }
+            return builtinFunction.execute(realArgs, context);
+        }else{
+            FunctionDefine funBody = funObj.getFunctionDefine();
+            List<IExpressionStatement> realArgExps = callExpression.getRealArgExps();
+            List<String> formatArgs = funBody.getFormatArgs();
+            if(formatArgs.size() != realArgExps.size()){
+                return error("function argument count not match");
+            }
+            Value[] realArgs = new Value[realArgExps.size()];
+            int j = 0;
+            for (IExpressionStatement realArgExp : realArgExps) {
+                realArgs[j++] = eval(realArgExp, context);
+            }
+            EvalContext localContext = new EvalContext(context);
+            for (int i = 0, len = formatArgs.size(); i < len; i++){
+                localContext.addVariable(formatArgs.get(i), realArgs[i]);
+            }
+            Value val = eval(funBody.getBody(), localContext);
+            if(val.getType() == ValueType.SIGNAL){
+                SignalValue signal = val.cast(SignalValue.class);
+                if(signal.type() == SignalValue.Type.RETURN){
+                    return signal.val();
+                }
+            }
+            return val;
         }
-        return val;
     }
 
     private Value evaluateFunctionDefine(FunctionDefineExpression expression, EvalContext context){
@@ -128,7 +220,7 @@ public class Evaluator {
         for (Identifier argument : arguments) {
             argList.add(argument.literal());
         }
-        return new Value(new FunctionValue(argList, body, context));
+        return new Value(new FunctionObj(new FunctionDefine(argList, body, context)));
     }
 
     private Value evaluateSignalStatement(SignalStatement node) {
@@ -161,10 +253,16 @@ public class Evaluator {
     private Value evaluateIdentifier(Identifier node, EvalContext context) {
         String varName = node.literal();
         Value val = context.getVariable(varName);
-        if(val == null){
-            return error("no var name : " + varName);
+        if(val != null){
+            return val;
         }
-        return val;
+
+        IBuiltinFunction builtinFunction = BuiltinFunctionMap.get(varName);
+        if(builtinFunction != null){
+            return new Value(new FunctionObj(builtinFunction));
+        }
+
+        return error("no var name : " + varName);
     }
 
     private Value evaluateLet(LetStatement node, EvalContext context) throws EvalException {
@@ -235,7 +333,7 @@ public class Evaluator {
         }
         switch (operator){
             case "+":
-                return new Value(left.cast(RationalNumber.class).add(right.cast(RationalNumber.class)));
+                return evaluateAdd(left, right, context);
             case "-":
                 return new Value(left.cast(RationalNumber.class).sub(right.cast(RationalNumber.class)));
             case "*":
@@ -256,6 +354,25 @@ public class Evaluator {
                 return evaluateEqual(left, right, context).cast(boolean.class) ? Value.FALSE : Value.TRUE;
             default:
                 return error("nonsupport operator : " + operator);
+        }
+    }
+
+    private Value evaluateAdd(Value left, Value right, EvalContext context){
+        ValueType leftType = left.getType();
+        ValueType rightType = right.getType();
+        if(leftType == ValueType.SIGNAL){ return left; }
+        else if(rightType == ValueType.SIGNAL){ return right; }
+
+        if(leftType == ValueType.NUMBER && rightType == ValueType.NUMBER){
+            return new Value(left.cast(RationalNumber.class).add(right.cast(RationalNumber.class)));
+        }else if(leftType == ValueType.STRING){
+            String leftStr = left.cast(String.class);
+            String rightStr = rightType == ValueType.STRING ? right.cast(String.class) : right.inspect();
+            return new Value(leftStr + rightStr);
+        }else if(rightType == ValueType.STRING){
+            return new Value(left.inspect() + right.cast(String.class));
+        }else{
+            return error("nonsupport add for " + leftType.name() + " and " + rightType.name());
         }
     }
 
@@ -307,7 +424,7 @@ public class Evaluator {
         return result;
     }
 
-    private Value error(String message){
+    public static Value error(String message){
         return new Value(new SignalValue(SignalValue.Type.ERROR, new Value(message)));
     }
 

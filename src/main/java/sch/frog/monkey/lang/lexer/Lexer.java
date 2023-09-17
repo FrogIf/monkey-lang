@@ -46,6 +46,10 @@ public class Lexer {
         SPECIAL_TOKEN_MAP.put(">", TokenType.GT);
         SPECIAL_TOKEN_MAP.put(">=", TokenType.GTE);
         SPECIAL_TOKEN_MAP.put("<=", TokenType.LTE);
+        SPECIAL_TOKEN_MAP.put("[", TokenType.LBRACKET);
+        SPECIAL_TOKEN_MAP.put("]", TokenType.RBRACKET);
+        SPECIAL_TOKEN_MAP.put(":", TokenType.COLON);
+        SPECIAL_TOKEN_MAP.put(".", TokenType.DOT);
     }
 
     private final IScriptStream scriptStream;

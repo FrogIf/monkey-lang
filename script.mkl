@@ -13,3 +13,25 @@ let factorial = fun(num){
 }
 
 factorial(100);
+let c = "ced";
+print("aaa"+"bbb"+c+"");
+print("len : {}", len(c));
+
+print("array execute result : {}", [1, 2, [1, "aaa"]][2][1]);
+
+let arr = [1, "asdf", 123+45*56];
+print("arr index : {}", arr[2]);
+
+print("arr len : {}", len(arr));
+print("test : {}", -1 - -1);
+
+let m = {
+   "a" : 12 +23 * 45,
+   b : arr,
+   c : true,
+   d : {
+       e : [1, 2, 23]
+   }
+};
+
+print("map test : {}", m.d.e[2]);

@@ -5,7 +5,7 @@ import sch.frog.monkey.lang.evaluator.EvalContext;
 
 import java.util.List;
 
-public class FunctionValue {
+public class FunctionDefine {
 
     private IExpressionStatement functionBody;
 
@@ -13,7 +13,7 @@ public class FunctionValue {
 
     private EvalContext parent;
 
-    public FunctionValue(List<String> arguments, IExpressionStatement functionBody, EvalContext parent) {
+    public FunctionDefine(List<String> arguments, IExpressionStatement functionBody, EvalContext parent) {
         this.functionBody = functionBody;
         this.arguments = arguments;
         this.parent = parent;

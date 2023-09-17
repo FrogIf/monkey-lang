@@ -43,4 +43,8 @@ public class EvalContext {
         return v;
     }
 
+    public IOutput getOutput(){
+        return GeneralOutput.out;
+    }
+
 }

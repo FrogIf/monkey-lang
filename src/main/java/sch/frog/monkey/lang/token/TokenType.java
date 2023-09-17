@@ -33,9 +33,13 @@ public enum TokenType {
     ELSE, // else
     WHILE, // while
     NULL, // null
-    BREAK,
-    CONTINUE,
+    BREAK, // break
+    CONTINUE, // continue
     COMMENT, // 注释
+    LBRACKET, //[
+    RBRACKET, //]
+    COLON, // :
+    DOT, // .
 
 
 }

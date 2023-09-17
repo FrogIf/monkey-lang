@@ -3,6 +3,7 @@ package sch.frog.monkey.lang.val;
 import io.github.frogif.calculator.number.impl.IntegerNumber;
 import io.github.frogif.calculator.number.impl.NumberRoundingMode;
 import io.github.frogif.calculator.number.impl.RationalNumber;
+import sch.frog.monkey.lang.evaluator.IBuiltinFunction;
 import sch.frog.monkey.lang.exception.ValueCastException;
 
 import java.math.BigDecimal;
@@ -117,8 +118,16 @@ public class Value {
             if(val.type != ValueType.SIGNAL){ throw new ValueCastException(val.type, SignalValue.class); }
             return val.val;
         });
-        javaTypeConvertorMap.put(FunctionValue.class, val -> {
-            if(val.type != ValueType.FUNCTION){ throw new ValueCastException(val.type, FunctionValue.class); }
+        javaTypeConvertorMap.put(FunctionObj.class, val -> {
+            if(val.type != ValueType.FUNCTION){ throw new ValueCastException(val.type, FunctionObj.class); }
+            return val.val;
+        });
+        javaTypeConvertorMap.put(Value[].class, val -> {
+            if(val.type != ValueType.ARRAY){ throw new ValueCastException(val.type, Value[].class); }
+            return val.val;
+        });
+        javaTypeConvertorMap.put(MapObject.class, val -> {
+            if(val.type != ValueType.MAP){ throw new ValueCastException(val.type, MapObject.class); }
             return val.val;
         });
     }
@@ -156,8 +165,20 @@ public class Value {
         this(ValueType.SIGNAL, signal);
     }
 
-    public Value(FunctionValue funVal){
-        this(ValueType.FUNCTION, funVal);
+    public Value(FunctionObj funObj){
+        this(ValueType.FUNCTION, funObj);
+    }
+
+    public Value(IBuiltinFunction builtinFunction){
+        this(ValueType.FUNCTION, builtinFunction);
+    }
+
+    public Value(Value[] arr){
+        this(ValueType.ARRAY, arr);
+    }
+
+    public Value(MapObject map) {
+        this(ValueType.MAP, map);
     }
 
     public ValueType getType() {

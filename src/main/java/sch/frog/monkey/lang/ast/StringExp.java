@@ -9,8 +9,12 @@ public final class StringExp implements IExpressionStatement{
 
     private final Token strToken;
 
+    private final String str;
+
     public StringExp(Token strToken){
         this.strToken = strToken;
+        String literal = strToken.getLiteral();
+        str = literal.substring(1, literal.length() - 1);
     }
 
     @Override
@@ -24,6 +28,6 @@ public final class StringExp implements IExpressionStatement{
     }
 
     public Value evaluate(){
-        return new Value(strToken.getLiteral());
+        return new Value(str);
     }
 }
